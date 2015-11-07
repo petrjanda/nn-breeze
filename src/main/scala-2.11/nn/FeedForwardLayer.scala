@@ -1,6 +1,6 @@
 package nn
 
-import breeze.linalg.{*, DenseVector, DenseMatrix}
+import breeze.linalg.{*, DenseMatrix, DenseVector}
 import nn.training.RBMGradient
 
 // NEURAL NETWORKS
@@ -13,7 +13,10 @@ object FeedForwardLayer {
   }
 }
 
-class FeedForwardLayer(W: Mat, b: Vec, activation: ActivationFn) {
+case class FeedForwardLayer(W: Mat, b: Vec, activation: ActivationFn) extends Layer[RBMGradient] {
+  lazy val numInputs = W.cols
+  lazy val numOutputs = W.rows
+
   def propUp(x: Mat): Mat = {
     val o: Mat = x.t * W
 
@@ -22,6 +25,7 @@ class FeedForwardLayer(W: Mat, b: Vec, activation: ActivationFn) {
 
   def prop(x: Mat): Mat = propUp(x)
 
-  def update(g: RBMGradient) =
-    new FeedForwardLayer(W :+ g.W, b :+ g.b, activation)
+  def propDown(x: Mat): Mat = ???
+
+  def update(g: RBMGradient): Layer[RBMGradient] = ???
 }

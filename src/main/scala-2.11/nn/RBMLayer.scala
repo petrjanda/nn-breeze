@@ -13,10 +13,16 @@ object RBMLayer {
   }
 }
 
-class RBMLayer(val W: Mat, b: Vec, hiddenB: Vec, val activation: ActivationFn, val hiddenActivation: ActivationFn)
-  extends FeedForwardLayer(W, b, activation) {
+case class RBMLayer(val W: Mat, b: Vec, hiddenB: Vec, val activation: ActivationFn, val hiddenActivation: ActivationFn)
+  extends Layer[RBMGradient] {
   lazy val numInputs = W.cols
   lazy val numOutputs = W.rows
+
+  def propUp(x: Mat): Mat = {
+    val o: Mat = x.t * W
+
+    activation(o(*, ::) :+ b)
+  }
 
   def propDown(x: Mat): Mat = {
     val o: Mat = x * W.t
@@ -24,8 +30,8 @@ class RBMLayer(val W: Mat, b: Vec, hiddenB: Vec, val activation: ActivationFn, v
     hiddenActivation(o(*, ::) :+ hiddenB).t
   }
 
-  override def prop(x: Mat): Mat = propDown(propUp(x))
+  def prop(x: Mat): Mat = propDown(propUp(x))
 
-  override def update(g: RBMGradient) =
-    new RBMLayer(W :+ g.W, b :+ g.b, hiddenB :+ g.hiddenB, activation, hiddenActivation)
+  override def update(g: RBMGradient): Layer[RBMGradient] =
+    this.copy(W = W :+ g.W, b = b :+ g.b)
 }

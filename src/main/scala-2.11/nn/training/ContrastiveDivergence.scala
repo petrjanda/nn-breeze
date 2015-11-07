@@ -5,10 +5,8 @@ import breeze.stats._
 import breeze.stats.distributions.Binomial
 import nn._
 
-
-
 object ContrastiveDivergence {
-  def diff(nn: RBMLayer, input: Mat, k: Int) = {
+  def diff(nn: Layer[RBMGradient], input: Mat, k: Int) = {
     val gibbs = new GibbsSampler(nn)
     val probHidden = gibbs.sampleHiddenGivenVisible(input)
 
@@ -46,22 +44,23 @@ private object GibbsSampler {
   }
 }
 
-private class GibbsSampler(rbm: RBMLayer) {
+// TODO Implement isBinomial
+private class GibbsSampler(rbm: Layer[RBMGradient]) {
   import GibbsSampler._
 
-  val isBinomialVisible = rbm.activation == nn.sigmoid
-  val isBinomialHidden = rbm.hiddenActivation == nn.sigmoid
+//  val isBinomialVisible = rbm.activation == nn.sigmoid
+//  val isBinomialHidden = rbm.hiddenActivation == nn.sigmoid
 
   def sampleHiddenGivenVisible(v: Mat) = {
     val mean = rbm.propUp(v)
 
-    Sample(mean, sample(mean, isBinomialHidden))
+    Sample(mean, sample(mean)) //, isBinomialHidden))
   }
 
   def sampleVisibleGivenHidden(h: Mat) = {
     val mean = rbm.propDown(h)
 
-    Sample(mean, sample(mean, isBinomialVisible))
+    Sample(mean, sample(mean)) // , isBinomialVisible))
   }
 
   def sampleHiddenVisibleHidden(h: Mat) = {
@@ -71,7 +70,6 @@ private class GibbsSampler(rbm: RBMLayer) {
     HVHSample(vh, hv)
   }
 
-  // TODO Implement isBinomial
-  private def sample(mean: Mat, isBinomial: Boolean) =
+  private def sample(mean: Mat, isBinomial: Boolean = false) =
     mean.map { v => Binomial(1, v).sample.toDouble }
 }

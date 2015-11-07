@@ -1,4 +1,5 @@
 import breeze.linalg._
+import nn.training.RBMGradient
 
 object Main extends App {
   import nn._
@@ -16,7 +17,7 @@ object Main extends App {
   val input = Range(0, 100000).toList.map { _ => x }
   val initial = RBMLayer(3, 2, sigmoid, sigmoid)
 
-  val trainer = training.train[RBMLayer](
+  val trainer = training.train[RBMGradient](
     initial, training.contrastiveDivergence _, crossEntropy
   ) _
 
