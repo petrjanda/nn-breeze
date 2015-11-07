@@ -39,8 +39,7 @@ object ContrastiveDivergence {
   }
 }
 
-
-object GibbsSampler {
+private object GibbsSampler {
   case class Sample(mean: Mat, sample: Mat)
 
   case class HVHSample(nvMean: Mat, nvSamples: Mat, nhMeans: Mat, nhSample: Mat)
@@ -50,11 +49,11 @@ object GibbsSampler {
   }
 }
 
-class GibbsSampler(rbm: RBMLayer) {
+private class GibbsSampler(rbm: RBMLayer) {
   import GibbsSampler._
 
-  val isBinomialVisible = rbm.activation == nn.Activation.sigmoid
-  val isBinomialHidden = rbm.hiddenActivation == nn.Activation.sigmoid
+  val isBinomialVisible = rbm.activation == nn.sigmoid
+  val isBinomialHidden = rbm.hiddenActivation == nn.sigmoid
 
   def sampleHiddenGivenVisible(v: Mat) = {
     val mean = rbm.propUp(v)
@@ -75,6 +74,7 @@ class GibbsSampler(rbm: RBMLayer) {
     HVHSample(vh, hv)
   }
 
+  // TODO Implement isBinomial
   private def sample(mean: Mat, isBinomial: Boolean) =
     mean.map { v => Binomial(1, v).sample.toDouble }
 }
