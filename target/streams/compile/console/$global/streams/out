@@ -1,0 +1,14 @@
+[0m[[0mdebug[0m] [0mGetting compiler-interface from component compiler for Scala 2.11.7[0m
+[0m[[0mdebug[0m] [0mWaiting for threads to exit or System.exit to be called.[0m
+[0m[[0mdebug[0m] [0mWaiting for thread run-main-0 to terminate.[0m
+[0m[[0mdebug[0m] [0mGetting compiler-interface from component compiler for Scala 2.11.7[0m
+[0m[[0minfo[0m] [0mStarting scala interpreter...[0m
+[0m[[0minfo[0m] [0m[0m
+[0m[[33mwarn[0m] [0mRun canceled.[0m
+[0m[[0mdebug[0m] [0mInterrupting thread run-main-0[0m
+[0m[[0mdebug[0m] [0m	Interrupted run-main-0[0m
+[0m[[0mdebug[0m] [0mNot interrupting system thread Thread[process reaper,10,system][0m
+[0m[[0mdebug[0m] [0mInterrupting thread Thread-1[0m
+[0m[[0mdebug[0m] [0m	Interrupted Thread-1[0m
+[0m[[0mdebug[0m] [0mInterrupting thread ForkJoinPool-1-worker-13[0m
+[0m[[0mdebug[0m] [0m	Interrupted ForkJoinPool-1-worker-13[0m
