@@ -1,13 +1,9 @@
 import breeze.linalg._
-import breeze.numerics.{sigmoid => sig, tanh => th, log}
+import breeze.numerics.{log, sigmoid => sig, tanh => th}
 import breeze.stats._
-import breeze.stats.distributions.{ThreadLocalRandomGenerator, RandBasis, Rand, Binomial}
-import nn.Trainer
-
+import breeze.stats.distributions.{RandBasis, ThreadLocalRandomGenerator}
+import nn.training.RBMGradient
 import org.apache.commons.math3.random.MersenneTwister
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Success
 
 
 package object nn {
@@ -32,14 +28,13 @@ package object nn {
     def constant(rate: Double): Int => Double = { _ => 1.0 - rate }
   }
 
-  object LossFunction {
-    type LossFn = (Mat, Mat) => Double
 
-    val crossEntropy: LossFn = (y, a) => {
-      val p = -y :* log(a) :+ (1.0 - y) :* log(1.0 - a)
+  type LossFn = (Mat, Mat) => Double
 
-      mean(sum(p(::, *)))
-    }
+  val crossEntropy: LossFn = (y, a) => {
+    val p = -y :* log(a) :+ (1.0 - y) :* log(1.0 - a)
+
+    mean(sum(p(::, *)))
   }
 
 
@@ -62,7 +57,7 @@ package object nn {
 
     def prop(x: Mat): Mat = propUp(x)
 
-    def update(g: Trainer.RBMGradient) =
+    def update(g: RBMGradient) =
       new FeedForwardLayer(W :+ g.W, b :+ g.b, activation)
   }
 
@@ -90,7 +85,7 @@ package object nn {
 
     override def prop(x: Mat): Mat = propDown(propUp(x))
 
-    override def update(g: Trainer.RBMGradient) =
+    override def update(g: RBMGradient) =
       new RBMLayer(W :+ g.W, b :+ g.b, hiddenB :+ g.hiddenB, activation, hiddenActivation)
   }
 
@@ -104,6 +99,7 @@ package object nn {
 }
 
 object Main extends App {
+  import nn._
   import scala.concurrent.ExecutionContext.Implicits.global
 
   val x = new DenseMatrix(3, 5, Array(
@@ -117,10 +113,9 @@ object Main extends App {
   val input = Range(0, 100000).toList.map { _ => x }
   val initial = nn.RBMLayer(3, 2, nn.Activation.sigmoid, nn.Activation.sigmoid)
 
-  nn.training.train(
-    rbm = initial,
-    input = input.toIterator,
-    updater = nn.training.contrastiveDivergence _,
-    loss = nn.LossFunction.crossEntropy
-  )
+  val trainer = training.train[RBMLayer](
+    initial, training.contrastiveDivergence _, crossEntropy
+  ) _
+
+  trainer(input.toIterator)
 }
