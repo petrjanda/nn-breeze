@@ -6,6 +6,9 @@ import nn.Trainer
 
 import org.apache.commons.math3.random.MersenneTwister
 
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Success
+
 
 package object nn {
   type Mat = DenseMatrix[Double]
@@ -108,24 +111,26 @@ package object nn {
 
   def printVec(n: String, m: Vec) =
     println(s"$n: ${m.size}")
-
-  def trainRbm(rbm: RBMLayer, input: Iterator[Mat]): RBMLayer =
-    input.foldLeft(rbm) {
-      case(l, in) =>
-        l.update(Trainer.ContrastiveDivergence.diff(l, in, 1))
-    }
 }
 
 object Main extends App {
-  val x = new DenseMatrix(2, 1, Array(
-    0.0, 1.0,
-    0.0, 1.0,
-    1.0, 1.0
+  import scala.concurrent.ExecutionContext.Implicits.global
+
+  val x = new DenseMatrix(3, 1, Array(
+    1.0, 1.0, 0.0,
+    0.0, 1.0, 1.0,
+    0.0, 1.0, 1.0,
+    1.0, 1.0, 1.0,
+    1.0, 1.0, 1.0
   ))
 
-  val input = Range(0, 100000).toList.map { _ => x }
-  val initial = nn.RBMLayer(2, 3, nn.Activation.sigmoid, nn.Activation.sigmoid)
-  val rbm = nn.trainRbm(initial, input.toIterator)
+  val input = Range(0, 10000).toList.map { _ => x }
+  val initial = nn.RBMLayer(3, 10, nn.Activation.sigmoid, nn.Activation.sigmoid)
 
-  println(rbm.propDown(rbm.propUp(x)))
+  val rbm = nn.training.train(initial, input.toIterator, nn.training.contrastiveDivergence _)
+
+  rbm.onComplete {
+    case Success(rbm) =>
+      println(rbm.propDown(rbm.propUp(x)))
+  }
 }
