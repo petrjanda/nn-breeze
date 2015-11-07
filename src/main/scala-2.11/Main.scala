@@ -1,6 +1,6 @@
 import breeze.linalg._
 import nn._
-import nn.training.RBMGradient
+import utils.FileRepo
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -14,13 +14,28 @@ object Main extends App {
     1.0, 1.0, 0.0
   ))
 
-  val input = Range(0, 100000).toList.map { _ => x }
+  val nn = new FileRepo("nn/")
 
-  val trainer = training.train(
-    RBMLayer(3, 2, sigmoid, sigmoid), training.contrastiveDivergence _, crossEntropy
-  ) _
+  args.headOption match {
+    case Some("train") =>
+      val input = Range(0, 100000).toList.map { _ => x }
 
-  trainer(input.toIterator).map { rbm =>
-    println(rbm.prop(x))
+      val trainer = training.train(
+        RBMLayer(3, 2, sigmoid, sigmoid), training.contrastiveDivergence _, crossEntropy
+      ) _
+
+      trainer(input.toIterator).map { rbm =>
+        nn.save(rbm, "rbm.o")
+        println("Done.")
+      }
+
+    case Some("predict") =>
+      val rbm = nn.load[RBMLayer]("rbm.o")
+
+      println(rbm.map(_.prop(x)))
+
+    case _ => throw new IllegalArgumentException("Missing command!")
   }
 }
+
+
