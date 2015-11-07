@@ -29,13 +29,13 @@ package object nn {
   }
 
   object LearningFunction {
-    val constant = (iteration: Int) => 1
-
-    def annealing(rate: Double): Int => Double = { _ => 1.0 - rate }
+    def constant(rate: Double): Int => Double = { _ => 1.0 - rate }
   }
 
   object LossFunction {
-    val crossEntropy: (Mat, Mat) => Double = (y, a) => {
+    type LossFn = (Mat, Mat) => Double
+
+    val crossEntropy: LossFn = (y, a) => {
       val p = -y :* log(a) :+ (1.0 - y) :* log(1.0 - a)
 
       mean(sum(p(::, *)))
@@ -44,40 +44,29 @@ package object nn {
 
 
   // NEURAL NETWORKS
-
-  trait Layer {
-    def W: Mat
-    def b: Vec
-    def activation: Mat => Mat
-
-    def propUp(x: Mat): Mat
-  }
-
-  trait BiDirectionalLayer extends Layer {
-    def hiddenB: Vec // hidden bias
-    def hiddenActivation: Mat => Mat
-
-    def propDown(x: Mat): Mat
-  }
-
-  object FFLayer {
+  object FeedForwardLayer {
     def apply(numInput: Int, numOutput: Int, activation: ActivationFn) = {
       val W = DenseMatrix.rand(numInput, numOutput, NNRand.uniform)
-      val b = DenseVector.rand(numInput, NNRand.uniform)
+      val b = DenseVector.rand(numOutput, NNRand.uniform)
 
-      new FFLayer(W, b, activation)
+      new FeedForwardLayer(W, b, activation)
     }
   }
 
-  class FFLayer(W: Mat, b: Vec, activation: ActivationFn) {
+  class FeedForwardLayer(W: Mat, b: Vec, activation: ActivationFn) {
     def propUp(x: Mat): Mat = {
-      val o = x.t * W
+      val o: Mat = x.t * W
 
       activation(o(*, ::) :+ b)
     }
+
+    def prop(x: Mat): Mat = propUp(x)
+
+    def update(g: Trainer.RBMGradient) =
+      new FeedForwardLayer(W :+ g.W, b :+ g.b, activation)
   }
 
-  object NNRand extends RandBasis(new ThreadLocalRandomGenerator(new MersenneTwister(1234)))
+  object NNRand extends RandBasis(new ThreadLocalRandomGenerator(new MersenneTwister(12345)))
 
   object RBMLayer {
     def apply(numInput: Int, numOutput: Int, activation: ActivationFn, hiddenActivation: ActivationFn) = {
@@ -89,7 +78,7 @@ package object nn {
     }
   }
 
-  class RBMLayer(val W: Mat, b: Vec, hiddenB: Vec, val activation: ActivationFn, val hiddenActivation: ActivationFn) extends FFLayer(W, b, activation) {
+  class RBMLayer(val W: Mat, b: Vec, hiddenB: Vec, val activation: ActivationFn, val hiddenActivation: ActivationFn) extends FeedForwardLayer(W, b, activation) {
     lazy val numInputs = W.cols
     lazy val numOutputs = W.rows
 
@@ -99,15 +88,16 @@ package object nn {
       hiddenActivation(o(*, ::) :+ hiddenB).t
     }
 
-    def prop(x: Mat): Mat = propUp(propDown(x))
+    override def prop(x: Mat): Mat = propDown(propUp(x))
 
-    def update(g: Trainer.RBMGradient) = {
+    override def update(g: Trainer.RBMGradient) =
       new RBMLayer(W :+ g.W, b :+ g.b, hiddenB :+ g.hiddenB, activation, hiddenActivation)
-    }
   }
 
-  def printMat(n: String, m: Mat) =
+  def printMat(n: String, m: Mat) = {
     println(s"$n: ${m.rows}, ${m.cols}")
+    println(m.data.toList)
+  }
 
   def printVec(n: String, m: Vec) =
     println(s"$n: ${m.size}")
@@ -116,21 +106,21 @@ package object nn {
 object Main extends App {
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  val x = new DenseMatrix(3, 1, Array(
-    1.0, 1.0, 0.0,
+  val x = new DenseMatrix(3, 5, Array(
     0.0, 1.0, 1.0,
     0.0, 1.0, 1.0,
-    1.0, 1.0, 1.0,
-    1.0, 1.0, 1.0
+    0.0, 0.0, 1.0,
+    0.0, 1.0, 1.0,
+    1.0, 1.0, 0.0
   ))
 
-  val input = Range(0, 10000).toList.map { _ => x }
-  val initial = nn.RBMLayer(3, 10, nn.Activation.sigmoid, nn.Activation.sigmoid)
+  val input = Range(0, 100000).toList.map { _ => x }
+  val initial = nn.RBMLayer(3, 2, nn.Activation.sigmoid, nn.Activation.sigmoid)
 
-  val rbm = nn.training.train(initial, input.toIterator, nn.training.contrastiveDivergence _)
-
-  rbm.onComplete {
-    case Success(rbm) =>
-      println(rbm.propDown(rbm.propUp(x)))
-  }
+  nn.training.train(
+    rbm = initial,
+    input = input.toIterator,
+    updater = nn.training.contrastiveDivergence _,
+    loss = nn.LossFunction.crossEntropy
+  )
 }

@@ -5,7 +5,10 @@ import breeze.stats._
 import breeze.stats.distributions.Binomial
 
 object Trainer {
-  case class RBMGradient(W: Mat, b: Vec, hiddenB: Vec)
+  case class RBMGradient(W: Mat, b: Vec, hiddenB: Vec) {
+    def scale(ratio: Double): RBMGradient =
+      RBMGradient(W / ratio, b / ratio, hiddenB / ratio)
+  }
 
   object ContrastiveDivergence {
     def diff(nn: RBMLayer, input: Mat, k: Int) = {
