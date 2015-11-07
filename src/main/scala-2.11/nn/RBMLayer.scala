@@ -32,6 +32,8 @@ case class RBMLayer(val W: Mat, b: Vec, hiddenB: Vec, val activation: Activation
 
   def prop(x: Mat): Mat = propDown(propUp(x))
 
-  override def update(g: RBMGradient): Layer[RBMGradient] =
-    this.copy(W = W :+ g.W, b = b :+ g.b)
+  override def update(g: RBMGradient): Layer[RBMGradient] = {
+//    println(g.W)
+    this.copy(W =  W :+ g.W, b = b :+ g.b)
+  }
 }
