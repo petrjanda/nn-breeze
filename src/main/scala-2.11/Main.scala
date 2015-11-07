@@ -16,7 +16,7 @@ object Main extends App {
 
   val input = Range(0, 100000).toList.map { _ => x }
 
-  val trainer = training.train[RBMGradient](
+  val trainer = training.train(
     RBMLayer(3, 2, sigmoid, sigmoid), training.contrastiveDivergence _, crossEntropy
   ) _
 
