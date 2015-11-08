@@ -18,7 +18,7 @@ object Main extends App {
 
   args.headOption match {
     case Some("train") =>
-      val input = miniBatches(loadMnist(50000), size = 500)(epochs = 5)
+      val input = miniBatches(loadMnist(50000), size = 100)(epochs = 5)
       val init: Layer[RBMGradient] = RBMLayer(input.numFeatures, 100, sigmoid, sigmoid)
 
       val trainer = setupTrainer(
