@@ -2,7 +2,6 @@ package nn
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
-import nn.training.Gradient
 
 package object training {
 
@@ -20,15 +19,22 @@ package object training {
     val gradient: G = algo(rbm, input).scale(learning(iteration))
 
     Future.successful(rbm.update(gradient)).andThen {
-      case Success(rbm) => if(iteration % 100 == 0) println(s"iteration: $iteration, loss: ${loss(input, rbm.prop(input)) / input.cols / input.rows}")
+      case Success(rbm) => if(iteration % 100 == 0 || iteration == 1) println(s"iteration: $iteration, loss: ${loss(input, rbm.prop(input)) / input.cols / input.rows}")
     }
   }
 
+
+  case class DataSet(stream: Stream[Mat], numIterations: Int, numFeatures: Int)
+
   def miniBatches[T](mat: Mat, size: Int = 50)
-                    (count: Int = mat.cols / (size + 2), epochs: Int = 1): Stream[Mat] = {
+                    (count: Int = mat.cols / (size + 2), epochs: Int = 1): DataSet = {
     def next = (c: Int) => mat(::, (c * size) to (c * (size + 1)))
 
-    Range(0, count * epochs).toStream.map { i => next(i % count) }
+    DataSet(
+      Range(0, count * epochs).toStream.map { i => next(i % count) }, 
+      numIterations = count * epochs,
+      numFeatures = mat.rows
+    )
   }
 
   def train(

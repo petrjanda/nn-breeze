@@ -2,6 +2,7 @@ import nn._
 import nn.training._
 import utils.{FileRepo, Plot, _}
 
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Main extends App {
@@ -17,20 +18,25 @@ object Main extends App {
 
   args.headOption match {
     case Some("train") =>
-      val x = loadMnist(1500)
-      val init: Layer[RBMGradient] = RBMLayer(784, 100, sigmoid, sigmoid)
-      val trainer = setupTrainer(
-        training.contrastiveDivergence _,
-        crossEntropy,
-        annealing(.15, 6000)
-      ) _
-      val input = miniBatches(x, size = 10)(epochs = 40)
+      val input = miniBatches(loadMnist(100), size = 10)(epochs = 1000)
+      val init: Layer[RBMGradient] = RBMLayer(input.numFeatures, 100, sigmoid, sigmoid)
 
-      train(init, trainer, input).map {
-        rbm =>
-          nn.save(rbm, "mnist.o")
-          println("Done.")
-      }
+      val trainer = setupTrainer(
+        algo = training.contrastiveDivergence _,
+        loss = crossEntropy,
+        learning = annealing(.15, input.numIterations)
+      ) _
+
+      import scala.concurrent.duration._
+
+      val rbm = Await.result(train(
+        rbm = init,
+        trainer = trainer,
+        input = input.stream
+      ), 120 seconds)
+
+      nn.save(rbm, "mnist.o")
+      println("Done.")
 
     case Some("reconstruct") =>
       val rbm = nn.load[Layer[RBMGradient]]("mnist.o").get
@@ -39,9 +45,9 @@ object Main extends App {
 
       val p = new Plot(196,84)
 
-      drawSample(p, 7, x)
-      drawSample(p, 7, rbm.W, (0, 1))
-      drawSample(p, 7, reconstruction, (0, 2))
+      MNIST.drawMnistSample(p, 7, x)
+      MNIST.drawMnistSample(p, 7, rbm.W, (0, 1))
+      MNIST.drawMnistSample(p, 7, reconstruction, (0, 2))
 
       p.plot
 
