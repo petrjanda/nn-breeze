@@ -26,6 +26,11 @@ package object nn {
 
   def constant(rate: Double): LearningFn = { _ => rate }
 
+  def annealing(initial: Double, iterations: Int): LearningFn = {
+    iteration =>
+      initial * (1.0 - iteration.toDouble / iterations.toDouble)
+  }
+
 
   // Loss functions
 
@@ -41,12 +46,4 @@ package object nn {
   // Auxiliary
 
   object NNRand extends RandBasis(new ThreadLocalRandomGenerator(new MersenneTwister(12345)))
-
-  def printMat(n: String, m: Mat) = {
-    println(s"$n: ${m.rows}, ${m.cols}")
-    println(m.data.toList)
-  }
-
-  def printVec(n: String, m: Vec) =
-    println(s"$n: ${m.size}")
 }

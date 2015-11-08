@@ -1,38 +1,55 @@
-import breeze.linalg._
 import nn._
-import utils.FileRepo
+import nn.training._
+import utils.{FileRepo, Plot, _}
 
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Main extends App {
 
-  val x = new DenseMatrix(3, 5, Array(
-    0.0, 1.0, 1.0,
-    0.0, 0.0, 1.0,
-    0.0, 0.0, 1.0,
-    0.0, 1.0, 1.0,
-    1.0, 1.0, 0.0
-  ))
-
   val nn = new FileRepo("nn/")
+
+  def loadMnist(examples: Int) =
+    MNIST.read(
+      "data/train-labels-idx1-ubyte",
+      "data/train-images-idx3-ubyte",
+      Some(examples)
+    )._1
 
   args.headOption match {
     case Some("train") =>
-      val input = Range(0, 100000).toList.map { _ => x }
+      val input = miniBatches(loadMnist(50000), size = 100)(epochs = 5)
+      val init: Layer[RBMGradient] = RBMLayer(input.numFeatures, 100, sigmoid, sigmoid)
 
-      val trainer = training.train(
-        RBMLayer(3, 2, sigmoid, sigmoid), training.contrastiveDivergence _, crossEntropy
+      val trainer = setupTrainer(
+        algo = training.contrastiveDivergence _,
+        loss = crossEntropy,
+        learning = annealing(.1, input.numIterations)
       ) _
 
-      trainer(input.toIterator).map { rbm =>
-        nn.save(rbm, "rbm.o")
-        println("Done.")
-      }
+      import scala.concurrent.duration._
 
-    case Some("predict") =>
-      val rbm = nn.load[RBMLayer]("rbm.o")
+      val rbm = Await.result(train(
+        rbm = init,
+        trainer = trainer,
+        input = input.stream
+      ), 120 seconds)
 
-      println(rbm.map(_.prop(x)))
+      nn.save(rbm, "mnist.o")
+      println("Done.")
+
+    case Some("reconstruct") =>
+      val rbm = nn.load[Layer[RBMGradient]]("mnist.o").get
+      val x = loadMnist(7)
+      val reconstruction = rbm.prop(x)
+
+      val p = new Plot(196,84)
+
+      MNIST.drawMnistSample(p, 7, x)
+      MNIST.drawMnistSample(p, 7, rbm.W, (0, 1))
+      MNIST.drawMnistSample(p, 7, reconstruction, (0, 2))
+
+      p.plot
 
     case _ => throw new IllegalArgumentException("Missing command!")
   }
