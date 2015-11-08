@@ -22,7 +22,7 @@ object Main extends App {
       val init: Layer[RBMGradient] = RBMLayer(input.numFeatures, 100, sigmoid, sigmoid)
 
       val trainer = setupTrainer(
-        algo = training.contrastiveDivergence _,
+        algo = contrastiveDivergence _,
         loss = crossEntropy,
         learning = annealing(.1, input.numIterations)
       ) _
@@ -43,10 +43,10 @@ object Main extends App {
       val x = loadMnist(31)
       val reconstruction = rbm.prop(x)
 
-      val p = new Plot(20 * 28, 56)
+      val p = new Plot(6 * 28, 56)
 
-      MNIST.drawMnistSample(p, 10 to 29, x)
-      MNIST.drawMnistSample(p, 10 to 29, reconstruction, (0, 1))
+      MNIST.drawMnistSample(p, 10 to 15, x)
+      MNIST.drawMnistSample(p, 10 to 15, reconstruction, (0, 1))
 
       p.plot
 
