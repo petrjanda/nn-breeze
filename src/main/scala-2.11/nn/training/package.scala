@@ -8,12 +8,19 @@ package object training {
 
   type TrainingAlgorithm[G, T <: Layer[G]] = (T, Mat) => G
 
-  def setupTrainer[G <: Gradient[G]](algo: TrainingAlgorithm[G, Layer[G]], loss: LossFn)
-              (rbm: Layer[G], input: Mat)(implicit ec: ExecutionContext): Future[Layer[G]] = {
-    val gradient: G = algo(rbm, input).scale(.1)
+  def setupTrainer[G <: Gradient[G]](
+    algo: TrainingAlgorithm[G, Layer[G]],
+    loss: LossFn,
+    learning: LearningFn
+  )(
+    rbm: Layer[G],
+    input: Mat,
+    iteration: Int
+  )(implicit ec: ExecutionContext): Future[Layer[G]] = {
+    val gradient: G = algo(rbm, input).scale(learning(iteration))
 
     Future.successful(rbm.update(gradient)).andThen {
-      case Success(rbm) => println(s"loss: ${loss(input, rbm.prop(input))}")
+      case Success(rbm) => if(iteration % 100 == 0) println(s"iteration: $iteration, loss: ${loss(input, rbm.prop(input))}")
     }
   }
 
@@ -26,13 +33,19 @@ package object training {
 
   def train(
     rbm: Layer[RBMGradient],
-    trainer: (Layer[RBMGradient], Mat) => Future[Layer[RBMGradient]],
+    trainer: (Layer[RBMGradient], Mat, Int) => Future[Layer[RBMGradient]],
     input: Stream[Mat]
-  )(implicit ec: ExecutionContext) =
-      input.foldLeft(Future.successful(rbm)) {
-        case (rbm, batch) =>
-          rbm.flatMap(trainer(_, batch))
-      }
+  )(implicit ec: ExecutionContext) = {
+    var i = 0
+
+    input.foldLeft(Future.successful(rbm)) {
+      case (rbm, batch) =>
+        rbm.flatMap { rbm =>
+          i += 1
+          trainer(rbm, batch, i)
+        }
+    }
+  }
 
   // RBM specific
 

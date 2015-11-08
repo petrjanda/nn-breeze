@@ -19,8 +19,12 @@ object Main extends App {
     case Some("train") =>
       val x = loadMnist(1500)
       val init: Layer[RBMGradient] = RBMLayer(784, 100, sigmoid, sigmoid)
-      val trainer = setupTrainer(training.contrastiveDivergence _, crossEntropy) _
-      val input = miniBatches(x, size = 10)(epochs = 20)
+      val trainer = setupTrainer(
+        training.contrastiveDivergence _,
+        crossEntropy,
+        constant(.1)
+      ) _
+      val input = miniBatches(x, size = 10)(epochs = 40)
 
       train(init, trainer, input).map {
         rbm =>
