@@ -22,7 +22,7 @@ object Main extends App {
       val trainer = setupTrainer(
         training.contrastiveDivergence _,
         crossEntropy,
-        constant(.1)
+        annealing(.15, 6000)
       ) _
       val input = miniBatches(x, size = 10)(epochs = 40)
 

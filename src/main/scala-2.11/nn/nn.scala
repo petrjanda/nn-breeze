@@ -26,7 +26,7 @@ package object nn {
 
   def constant(rate: Double): LearningFn = { _ => rate }
 
-  def annealing(initial: Double, iterations: Int): LearningFn = { i => initial * 1 - (i / iterations) }
+  def annealing(initial: Double, iterations: Int): LearningFn = { i => initial * (1 - i / iterations) }
 
 
   // Loss functions
