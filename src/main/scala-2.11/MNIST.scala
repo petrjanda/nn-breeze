@@ -81,9 +81,9 @@ object MNIST {
     (image, label)
   }
 
-  def drawMnistSample(p: Plot, count: Int, mat: Mat, pos: (Int, Int) = (0, 0)) = {
-    Range(0, count).foreach { i =>
-      p.draw(DenseMatrix.create[Double](28, 28, mat(::, i).toDenseVector.data), (28 * (i + pos._1), 28 * pos._2))
+  def drawMnistSample(p: Plot, range: Range, mat: Mat, pos: (Int, Int) = (0, 0)) = {
+    range.zipWithIndex.foreach { case(i, idx) =>
+      p.draw(DenseMatrix.create[Double](28, 28, mat(::, i).toDenseVector.data), (28 * (idx + pos._1), 28 * pos._2))
     }
   }
 }
