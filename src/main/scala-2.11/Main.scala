@@ -18,13 +18,13 @@ object Main extends App {
 
   args.headOption match {
     case Some("train") =>
-      val input = miniBatches(loadMnist(100), size = 10)(epochs = 1000)
+      val input = miniBatches(loadMnist(60000), size = 100)(epochs = 10)
       val init: Layer[RBMGradient] = RBMLayer(input.numFeatures, 100, sigmoid, sigmoid)
 
       val trainer = setupTrainer(
         algo = training.contrastiveDivergence _,
         loss = crossEntropy,
-        learning = annealing(.15, input.numIterations)
+        learning = annealing(.1, input.numIterations)
       ) _
 
       import scala.concurrent.duration._

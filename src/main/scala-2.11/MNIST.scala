@@ -72,7 +72,7 @@ object MNIST {
 
       numImagesRead += 1
 
-      if(numImagesRead % 100 == 0) {
+      if(numImagesRead % 1000 == 0) {
         print(".")
       }
     }

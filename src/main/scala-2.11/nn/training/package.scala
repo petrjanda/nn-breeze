@@ -19,7 +19,9 @@ package object training {
     val gradient: G = algo(rbm, input).scale(learning(iteration))
 
     Future.successful(rbm.update(gradient)).andThen {
-      case Success(rbm) => if(iteration % 100 == 0 || iteration == 1) println(s"iteration: $iteration, loss: ${loss(input, rbm.prop(input)) / input.cols / input.rows}")
+      case Success(rbm) =>
+        if(iteration % 100 == 0 || iteration == 1)
+          println(s"iteration: $iteration, loss: ${loss(input, rbm.prop(input)) / input.cols / input.rows}, rate: ${learning(iteration)}")
     }
   }
 
