@@ -1,6 +1,8 @@
 package nn
 
 trait Layer[G] {
+  def W: Mat
+
   def numInputs: Int
 
   def numOutputs: Int
