@@ -12,4 +12,7 @@ process to classify the data with small subset of original labels.
 
 ### Example output
 
+* First line is original
+* Second line is the reconstruction from NN with 100 neurons, trained on 50000 samples using mini batches of 100 items, 5 epochs.
+
 ![Output](https://raw.githubusercontent.com/petrjanda/nn-breeze/master/docs/mnist.png)
