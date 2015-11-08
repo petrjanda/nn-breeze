@@ -40,13 +40,13 @@ object Main extends App {
 
     case Some("reconstruct") =>
       val rbm = nn.load[Layer[RBMGradient]]("mnist.o").get
-      val x = loadMnist(27)
+      val x = loadMnist(31)
       val reconstruction = rbm.prop(x)
 
-      val p = new Plot(196,56)
+      val p = new Plot(20 * 28, 56)
 
-      MNIST.drawMnistSample(p, 20 to 26, x)
-      MNIST.drawMnistSample(p, 20 to 26, reconstruction, (0, 1))
+      MNIST.drawMnistSample(p, 10 to 29, x)
+      MNIST.drawMnistSample(p, 10 to 29, reconstruction, (0, 1))
 
       p.plot
 
