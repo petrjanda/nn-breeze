@@ -20,7 +20,7 @@ package object training {
     val gradient: G = algo(rbm, input).scale(learning(iteration))
 
     Future.successful(rbm.update(gradient)).andThen {
-      case Success(rbm) => if(iteration % 100 == 0) println(s"iteration: $iteration, loss: ${loss(input, rbm.prop(input))}")
+      case Success(rbm) => if(iteration % 100 == 0) println(s"iteration: $iteration, loss: ${loss(input, rbm.prop(input)) / input.cols / input.rows}")
     }
   }
 
