@@ -71,5 +71,5 @@ private class GibbsSampler(rbm: Layer[RBMGradient]) {
   }
 
   private def sample(mean: Mat, isBinomial: Boolean = false) =
-    mean.map { v => Binomial(1, v).sample.toDouble }
+    mean.map { v => Binomial(1, if(v.isNaN) 0 else v).sample.toDouble }
 }

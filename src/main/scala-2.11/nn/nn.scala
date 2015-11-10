@@ -19,6 +19,12 @@ package object nn {
 
   val tanh: ActivationFn = (x: Mat) => th(x)
 
+  val softmax: ActivationFn = (x: Mat) => x(::, *).map { v =>
+    val total = v.toDenseVector.data.foldLeft(0.0) { _ + scala.math.exp(_) }
+
+    v.map(i => scala.math.exp(i) / total)
+  }
+
 
   // Learning function
 

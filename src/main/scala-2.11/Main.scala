@@ -1,13 +1,14 @@
+import breeze.linalg.DenseMatrix
 import nn._
 import nn.training._
 import utils.{FileRepo, Plot, _}
 
-import scala.concurrent.Await
+import scala.concurrent.{Future, Await}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Main extends App {
 
-  val nn = new FileRepo("nn/")
+  val repo = new FileRepo("nn/")
 
   def loadMnist(examples: Int) =
     MNIST.read(
@@ -18,14 +19,15 @@ object Main extends App {
 
   args.headOption match {
     case Some("train") =>
-      val input = miniBatches(loadMnist(50000), size = 100)(epochs = 5)
-      val init: Layer[RBMGradient] = RBMLayer(input.numFeatures, 100, sigmoid, sigmoid)
+      val input = miniBatches(loadMnist(30000), size = 100)(epochs = 5)
+      val init: Layer[RBMGradient] = RBMLayer(input.numFeatures, 10, sigmoid, sigmoid)
 
-      val trainer = setupTrainer(
-        algo = contrastiveDivergence _,
-        loss = crossEntropy,
-        learning = annealing(.1, input.numIterations)
-      ) _
+      val trainer: (Layer[RBMGradient], Mat, Int) => Future[Layer[RBMGradient]] =
+        setupTrainer(
+          algorithm = contrastiveDivergence _,
+          loss = crossEntropy,
+          learning = annealing(.1, input.numIterations)
+        ) _
 
       import scala.concurrent.duration._
 
@@ -35,11 +37,11 @@ object Main extends App {
         input = input.stream
       ), 120 seconds)
 
-      nn.save(rbm, "mnist.o")
+      repo.save(rbm, "mnist.o")
       println("Done.")
 
     case Some("reconstruct") =>
-      val rbm = nn.load[Layer[RBMGradient]]("mnist.o").get
+      val rbm = repo.load[Layer[RBMGradient]]("mnist.o").get
       val x = loadMnist(31)
       val reconstruction = rbm.prop(x)
 

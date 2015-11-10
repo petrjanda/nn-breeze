@@ -8,7 +8,7 @@ package object training {
   type TrainingAlgorithm[G, T <: Layer[G]] = (T, Mat) => G
 
   def setupTrainer[G <: Gradient[G]](
-    algo: TrainingAlgorithm[G, Layer[G]],
+    algorithm: TrainingAlgorithm[G, Layer[G]],
     loss: LossFn,
     learning: LearningFn
   )(
@@ -16,7 +16,7 @@ package object training {
     input: Mat,
     iteration: Int
   )(implicit ec: ExecutionContext): Future[Layer[G]] = {
-    val gradient: G = algo(rbm, input).scale(learning(iteration))
+    val gradient: G = algorithm(rbm, input).scale(learning(iteration))
 
     Future.successful(rbm.update(gradient)).andThen {
       case Success(rbm) =>
